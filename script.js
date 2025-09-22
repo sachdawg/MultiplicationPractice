@@ -137,39 +137,50 @@ function chooseQuestionPair() {
     const n = maxNumber;
     if (n <= 1) return [1, 1];
 
-    // Build groups for k = n .. 1 with geometric weights starting at 1/2
-    const groups = [];
-    let p = 0.5;
-    for (let k = n; k >= 1; k--) {
-        groups.push({ k, p });
-        p = p / 2;
-    }
-
-    // Ensure probabilities sum to 1 by adding remainder to the last group
-    const sum = groups.reduce((s, g) => s + g.p, 0);
-    const remainder = 1 - sum;
-    groups[groups.length - 1].p += remainder;
-
-    // Pick a group by cumulative probability
-    const r = Math.random();
-    let cum = 0;
-    let chosenK = groups[groups.length - 1].k;
-    for (const g of groups) {
-        cum += g.p;
-        if (r <= cum) {
-            chosenK = g.k;
-            break;
+    // Create all possible question pairs with their weights
+    const questions = [];
+    let totalWeight = 0;
+    
+    // For each times table from 1 to n
+    for (let k = 1; k <= n; k++) {
+        // Weight for this times table: 1/2^((n-k)+1)
+        // For n=12: k=12 gets weight 1/2, k=11 gets weight 1/4, etc.
+        const weight = 1 / Math.pow(2, (n - k) + 1);
+        
+        // Add each possible question in this times table
+        for (let i = 1; i <= k; i++) {
+            questions.push({
+                num1: k,
+                num2: i,
+                weight: weight
+            });
+            totalWeight += weight;
         }
     }
-
-    // Pick the other factor uniformly from 1..chosenK
-    const other = Math.floor(Math.random() * chosenK) + 1;
-
-    // Randomize the order so k isn't always shown first
+    
+    // Select a question based on weights
+    let random = Math.random() * totalWeight;
+    let cumulativeWeight = 0;
+    
+    for (const question of questions) {
+        cumulativeWeight += question.weight;
+        if (random <= cumulativeWeight) {
+            // Randomize the order so k isn't always shown first
+            if (Math.random() < 0.5) {
+                return [question.num1, question.num2];
+            } else {
+                return [question.num2, question.num1];
+            }
+        }
+    }
+    
+    // Fallback (should never reach here)
+    const fallbackK = Math.floor(Math.random() * n) + 1;
+    const fallbackOther = Math.floor(Math.random() * fallbackK) + 1;
     if (Math.random() < 0.5) {
-        return [chosenK, other];
+        return [fallbackK, fallbackOther];
     } else {
-        return [other, chosenK];
+        return [fallbackOther, fallbackK];
     }
 }
 
