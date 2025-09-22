@@ -1,2 +1,2 @@
-# MultiplicationPractice-
+# MultiplicationPractice
 Practice multiplication
