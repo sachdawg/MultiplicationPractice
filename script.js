@@ -132,54 +132,57 @@ function updateTimer() {
     }
 }
 
-// New: chooseNumber implements the requested distribution
-function chooseNumber() {
+// New: pick a question pair so that groups with max value k get probabilities 1/2, 1/4, 1/8, ...
+function chooseQuestionPair() {
     const n = maxNumber;
-    if (n <= 0) return 1;
-    // numbers descending: largest first
-    const numbers = [];
-    for (let k = n; k >= 1; k--) numbers.push(k);
-    
-    // build geometric probabilities starting from 0.5
-    const probs = [];
+    if (n <= 1) return [1, 1];
+
+    // Build groups for k = n .. 1 with geometric weights starting at 1/2
+    const groups = [];
     let p = 0.5;
-    for (let i = 0; i < n; i++) {
-        probs.push(p);
+    for (let k = n; k >= 1; k--) {
+        groups.push({ k, p });
         p = p / 2;
     }
-    // ensure sum to 1 by adding remainder to last
-    const sum = probs.reduce((a, b) => a + b, 0);
+
+    // Ensure probabilities sum to 1 by adding remainder to the last group
+    const sum = groups.reduce((s, g) => s + g.p, 0);
     const remainder = 1 - sum;
-    probs[probs.length - 1] += remainder;
-    
-    // build cumulative and pick
-    const cumulative = [];
-    probs.reduce((acc, v, i) => {
-        cumulative[i] = acc + v;
-        return cumulative[i];
-    }, 0);
-    
+    groups[groups.length - 1].p += remainder;
+
+    // Pick a group by cumulative probability
     const r = Math.random();
-    for (let i = 0; i < cumulative.length; i++) {
-        if (r <= cumulative[i]) {
-            return numbers[i];
+    let cum = 0;
+    let chosenK = groups[groups.length - 1].k;
+    for (const g of groups) {
+        cum += g.p;
+        if (r <= cum) {
+            chosenK = g.k;
+            break;
         }
     }
-    // fallback
-    return numbers[numbers.length - 1];
+
+    // Pick the other factor uniformly from 1..chosenK
+    const other = Math.floor(Math.random() * chosenK) + 1;
+
+    // Randomize the order so k isn't always shown first
+    if (Math.random() < 0.5) {
+        return [chosenK, other];
+    } else {
+        return [other, chosenK];
+    }
 }
 
 // Generate a multiplication question with weighted distribution
 function generateQuestion() {
-    // Select two numbers using the new distribution
-    let num1 = chooseNumber();
-    let num2 = chooseNumber();
+    // Select a question pair using the new distribution
+    let [num1, num2] = chooseQuestionPair();
+
     // avoid repeating the exact same displayed question twice in a row
     let questionKey = `${num1}×${num2}`;
     let attempts = 0;
     while (lastQuestion !== null && questionKey === lastQuestion && attempts < 10) {
-        num1 = chooseNumber();
-        num2 = chooseNumber();
+        [num1, num2] = chooseQuestionPair();
         questionKey = `${num1}×${num2}`;
         attempts++;
     }
