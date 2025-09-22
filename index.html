@@ -5,13 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Multiplication Practice</title>
     <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
     <div class="container">
         <div id="start-screen" class="screen">
             <h1>Multiplication Practice</h1>
             <p>Enter the maximum number for your multiplication practice:</p>
-            <input type="number" id="max-number" min="1" max="20" value="12">
+            <input type="number" id="max-number" min="1" max="20" value="12" inputmode="decimal">
             <button id="start-btn">Start Practice</button>
         </div>
         
@@ -26,10 +27,7 @@
             <div class="question">
                 <span id="num1">0</span> × <span id="num2">0</span> = ?
             </div>
-            <form id="answer-form">
-                <input type="number" inputmode="numeric" pattern="[0-9]*" id="answer" autocomplete="off" placeholder="Enter answer">
-                <button type="submit" id="submit-btn">Submit</button>
-            </form>
+            <input type="number" inputmode="decimal" pattern="[0-9.]*" id="answer" autocomplete="off" placeholder="Enter answer">
             <div id="feedback" class="feedback"></div>
             <div class="progress">
                 Questions: <span id="question-count">0</span>
@@ -39,8 +37,12 @@
         <div id="results-screen" class="screen hidden">
             <h2>Practice Complete!</h2>
             <div class="results">
-                <p>Score: <span id="score">0</span> correct answers</p>
+                <p>Current Score: <span id="score">0</span> correct answers</p>
+                <p>Highest Score: <span id="highest-score">0</span></p>
                 <p>Accuracy: <span id="accuracy">0</span>%</p>
+                <div class="chart-container">
+                    <canvas id="score-chart"></canvas>
+                </div>
                 <button id="restart-btn">Practice Again</button>
             </div>
         </div>

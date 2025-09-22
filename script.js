@@ -11,12 +11,13 @@ const timerProgress = document.querySelector('.timer-progress');
 const num1Element = document.getElementById('num1');
 const num2Element = document.getElementById('num2');
 const answerInput = document.getElementById('answer');
-const answerForm = document.getElementById('answer-form');
 const feedbackElement = document.getElementById('feedback');
 const questionCountElement = document.getElementById('question-count');
 const scoreElement = document.getElementById('score');
+const highestScoreElement = document.getElementById('highest-score');
 const accuracyElement = document.getElementById('accuracy');
 const restartBtn = document.getElementById('restart-btn');
+const scoreChartCanvas = document.getElementById('score-chart');
 
 // Game variables
 let maxNumber = 12;
@@ -27,12 +28,27 @@ let score = 0;
 let totalQuestions = 0;
 let currentAnswer = 0;
 let questionHistory = [];
+let scoreHistory = JSON.parse(localStorage.getItem('multiplicationScoreHistory')) || [];
+let chart = null;
 
 // Initialize the app
 function init() {
     startBtn.addEventListener('click', startGame);
     restartBtn.addEventListener('click', resetGame);
-    answerForm.addEventListener('submit', handleSubmit);
+    answerInput.addEventListener('input', checkAnswer);
+    
+    // Prevent blur on mobile to keep keyboard active
+    answerInput.addEventListener('blur', () => {
+        setTimeout(() => answerInput.focus(), 0);
+    });
+    
+    // Handle touch events to prevent blur on mobile
+    document.addEventListener('touchstart', (e) => {
+        if (!answerInput.contains(e.target) && quizScreen.classList.contains('hidden') === false) {
+            e.preventDefault();
+            answerInput.focus();
+        }
+    }, { passive: false });
     
     // Set the initial circumference for the timer
     const radius = timerProgress.r.baseVal.value;
@@ -56,6 +72,7 @@ function startGame() {
     totalTime = 60;
     score = 0;
     totalQuestions = 0;
+    questionHistory = [];
     questionCountElement.textContent = totalQuestions;
     timerElement.textContent = timeLeft;
     updateTimerDisplay();
@@ -69,7 +86,7 @@ function startGame() {
     // Generate first question
     generateQuestion();
     
-    // Focus on answer input
+    // Ensure focus
     answerInput.focus();
 }
 
@@ -112,70 +129,119 @@ function generateQuestion() {
     num2Element.textContent = num2;
     currentAnswer = num1 * num2;
     
-    // Clear input and feedback
+    // Clear input value (but keep focus)
     answerInput.value = '';
-    feedbackElement.textContent = '';
-    feedbackElement.className = 'feedback';
+    
+    // Show brief correct feedback if it was the previous question
+    if (feedbackElement.textContent === 'Correct!') {
+        // Feedback already shown for previous correct answer
+        setTimeout(() => {
+            feedbackElement.textContent = '';
+            feedbackElement.className = 'feedback';
+        }, 500);
+    }
     
     // Add to question history
     questionHistory.push(`${num1} × ${num2}`);
     totalQuestions++;
     questionCountElement.textContent = totalQuestions;
     
-    // Focus on answer input
+    // Ensure focus remains
     answerInput.focus();
 }
 
-// Handle form submission
-function handleSubmit(e) {
-    e.preventDefault();
-    
+// Check answer on input (only react to correct)
+function checkAnswer() {
     const userAnswer = parseInt(answerInput.value);
     
-    if (isNaN(userAnswer)) {
-        feedbackElement.textContent = 'Please enter a valid number';
-        feedbackElement.className = 'feedback incorrect';
-        return;
-    }
+    if (isNaN(userAnswer)) return; // Ignore invalid input
     
     if (userAnswer === currentAnswer) {
-        // Correct answer
+        // Correct answer - instantaneous next question
         score++;
         feedbackElement.textContent = 'Correct!';
         feedbackElement.className = 'feedback correct';
-    } else {
-        // Wrong answer
-        feedbackElement.textContent = `Incorrect! ${num1Element.textContent} × ${num2Element.textContent} = ${currentAnswer}`;
-        feedbackElement.className = 'feedback incorrect';
+        
+        // Immediately generate next question
+        generateQuestion();
     }
-    
-    // Move to next question after a short delay
-    setTimeout(() => {
-        if (timeLeft > 0) {
-            generateQuestion();
-        }
-    }, 1000);
+    // No action for incorrect - user must continue typing the correct answer
 }
 
 // End the game
 function endGame() {
     clearInterval(timer);
     
+    // Update score history
+    scoreHistory.push(score);
+    localStorage.setItem('multiplicationScoreHistory', JSON.stringify(scoreHistory));
+    
+    // Calculate highest score
+    const highestScore = Math.max(...scoreHistory, 0);
+    
     // Switch to results screen
     quizScreen.classList.add('hidden');
     resultsScreen.classList.remove('hidden');
     
-    // Calculate and display results
+    // Display results
     scoreElement.textContent = score;
+    highestScoreElement.textContent = highestScore;
     const accuracy = totalQuestions > 0 ? Math.round((score / totalQuestions) * 100) : 0;
     accuracyElement.textContent = accuracy;
+    
+    // Create line chart
+    createScoreChart();
+}
+
+// Create the line chart for score history
+function createScoreChart() {
+    const ctx = scoreChartCanvas.getContext('2d');
+    
+    if (chart) {
+        chart.destroy();
+    }
+    
+    chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: scoreHistory.map((_, index) => `Session ${index + 1}`),
+            datasets: [{
+                label: 'Scores Over Time',
+                data: scoreHistory,
+                borderColor: '#2575fc',
+                backgroundColor: 'rgba(37, 117, 252, 0.2)',
+                fill: true,
+                tension: 0.1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1
+                    }
+                }
+            }
+        }
+    });
 }
 
 // Reset the game
 function resetGame() {
     resultsScreen.classList.add('hidden');
     startScreen.classList.remove('hidden');
-    questionHistory = [];
+    if (chart) {
+        chart.destroy();
+        chart = null;
+    }
     answerInput.blur();
 }
 
