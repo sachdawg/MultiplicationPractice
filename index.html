@@ -16,11 +16,20 @@
         </div>
         
         <div id="quiz-screen" class="screen hidden">
-            <div class="timer">Time: <span id="timer">60</span>s</div>
+            <div class="timer-container">
+                <svg class="timer" viewBox="0 0 100 100">
+                    <circle class="timer-bg" cx="50" cy="50" r="45"></circle>
+                    <circle class="timer-progress" cx="50" cy="50" r="45"></circle>
+                </svg>
+                <div class="timer-text"><span id="timer">60</span>s</div>
+            </div>
             <div class="question">
                 <span id="num1">0</span> × <span id="num2">0</span> = ?
             </div>
-            <input type="number" id="answer" autocomplete="off" placeholder="Enter answer">
+            <form id="answer-form">
+                <input type="number" inputmode="numeric" pattern="[0-9]*" id="answer" autocomplete="off" placeholder="Enter answer">
+                <button type="submit" id="submit-btn">Submit</button>
+            </form>
             <div id="feedback" class="feedback"></div>
             <div class="progress">
                 Questions: <span id="question-count">0</span>

@@ -7,9 +7,11 @@ const resultsScreen = document.getElementById('results-screen');
 const maxNumberInput = document.getElementById('max-number');
 const startBtn = document.getElementById('start-btn');
 const timerElement = document.getElementById('timer');
+const timerProgress = document.querySelector('.timer-progress');
 const num1Element = document.getElementById('num1');
 const num2Element = document.getElementById('num2');
 const answerInput = document.getElementById('answer');
+const answerForm = document.getElementById('answer-form');
 const feedbackElement = document.getElementById('feedback');
 const questionCountElement = document.getElementById('question-count');
 const scoreElement = document.getElementById('score');
@@ -19,6 +21,7 @@ const restartBtn = document.getElementById('restart-btn');
 // Game variables
 let maxNumber = 12;
 let timeLeft = 60;
+let totalTime = 60;
 let timer;
 let score = 0;
 let totalQuestions = 0;
@@ -29,7 +32,13 @@ let questionHistory = [];
 function init() {
     startBtn.addEventListener('click', startGame);
     restartBtn.addEventListener('click', resetGame);
-    answerInput.addEventListener('input', checkAnswer);
+    answerForm.addEventListener('submit', handleSubmit);
+    
+    // Set the initial circumference for the timer
+    const radius = timerProgress.r.baseVal.value;
+    const circumference = 2 * Math.PI * radius;
+    timerProgress.style.strokeDasharray = `${circumference} ${circumference}`;
+    timerProgress.style.strokeDashoffset = circumference;
 }
 
 // Start the game
@@ -44,10 +53,12 @@ function startGame() {
     
     // Reset game state
     timeLeft = 60;
+    totalTime = 60;
     score = 0;
     totalQuestions = 0;
     questionCountElement.textContent = totalQuestions;
     timerElement.textContent = timeLeft;
+    updateTimerDisplay();
     feedbackElement.textContent = '';
     feedbackElement.className = 'feedback';
     answerInput.value = '';
@@ -62,10 +73,19 @@ function startGame() {
     answerInput.focus();
 }
 
+// Update the visual timer
+function updateTimerDisplay() {
+    const radius = timerProgress.r.baseVal.value;
+    const circumference = 2 * Math.PI * radius;
+    const offset = circumference - (timeLeft / totalTime) * circumference;
+    timerProgress.style.strokeDashoffset = offset;
+}
+
 // Update the timer
 function updateTimer() {
     timeLeft--;
     timerElement.textContent = timeLeft;
+    updateTimerDisplay();
     
     if (timeLeft <= 0) {
         endGame();
@@ -101,40 +121,40 @@ function generateQuestion() {
     questionHistory.push(`${num1} × ${num2}`);
     totalQuestions++;
     questionCountElement.textContent = totalQuestions;
+    
+    // Focus on answer input
+    answerInput.focus();
 }
 
-// Check the answer
-function checkAnswer() {
+// Handle form submission
+function handleSubmit(e) {
+    e.preventDefault();
+    
     const userAnswer = parseInt(answerInput.value);
     
-    if (isNaN(userAnswer)) return;
+    if (isNaN(userAnswer)) {
+        feedbackElement.textContent = 'Please enter a valid number';
+        feedbackElement.className = 'feedback incorrect';
+        return;
+    }
     
     if (userAnswer === currentAnswer) {
         // Correct answer
         score++;
         feedbackElement.textContent = 'Correct!';
         feedbackElement.className = 'feedback correct';
-        
-        // Move to next question after a short delay
-        setTimeout(() => {
-            if (timeLeft > 0) {
-                generateQuestion();
-                answerInput.focus();
-            }
-        }, 500);
-    } else if (userAnswer.toString().length >= currentAnswer.toString().length) {
-        // Wrong answer and user has entered enough digits
+    } else {
+        // Wrong answer
         feedbackElement.textContent = `Incorrect! ${num1Element.textContent} × ${num2Element.textContent} = ${currentAnswer}`;
         feedbackElement.className = 'feedback incorrect';
-        
-        // Move to next question after a short delay
-        setTimeout(() => {
-            if (timeLeft > 0) {
-                generateQuestion();
-                answerInput.focus();
-            }
-        }, 1000);
     }
+    
+    // Move to next question after a short delay
+    setTimeout(() => {
+        if (timeLeft > 0) {
+            generateQuestion();
+        }
+    }, 1000);
 }
 
 // End the game
