@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multiplication Practice</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <div id="start-screen" class="screen">
+            <h1>Multiplication Practice</h1>
+            <p>Enter the maximum number for your multiplication practice:</p>
+            <input type="number" id="max-number" min="1" max="20" value="12">
+            <button id="start-btn">Start Practice</button>
+        </div>
+        
+        <div id="quiz-screen" class="screen hidden">
+            <div class="timer">Time: <span id="timer">60</span>s</div>
+            <div class="question">
+                <span id="num1">0</span> × <span id="num2">0</span> = ?
+            </div>
+            <input type="number" id="answer" autocomplete="off" placeholder="Enter answer">
+            <div id="feedback" class="feedback"></div>
+            <div class="progress">
+                Questions: <span id="question-count">0</span>
+            </div>
+        </div>
+        
+        <div id="results-screen" class="screen hidden">
+            <h2>Practice Complete!</h2>
+            <div class="results">
+                <p>Score: <span id="score">0</span> correct answers</p>
+                <p>Accuracy: <span id="accuracy">0</span>%</p>
+                <button id="restart-btn">Practice Again</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="script.js"></script>
+</body>
+</html>
