@@ -179,6 +179,60 @@ button:active {
     width: 100% !important;
 }
 
+.num-picker {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    margin: 15px 0 20px;
+}
+
+.num-picker input[type="number"] {
+    width: 90px;
+    padding: 12px;
+    font-size: 18px;
+    text-align: center;
+    border-radius: 8px;
+    border: 2px solid #ddd;
+    background: white;
+}
+
+.num-btn {
+    background: linear-gradient(to right, #6a11cb, #2575fc);
+    color: white;
+    border: none;
+    padding: 10px 14px;
+    font-size: 22px;
+    border-radius: 8px;
+    cursor: pointer;
+    width: 48px;
+    height: 48px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.num-btn:active {
+    transform: translateY(1px);
+}
+
+/* New: clear data button */
+.clear-btn {
+    background: #ff4757;
+    color: white;
+    border: none;
+    padding: 12px 14px;
+    font-size: 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    box-shadow: none;
+    width: 100%;
+}
+
+.clear-btn:hover {
+    opacity: 0.95;
+}
+
 /* Responsive design */
 @media (max-width: 600px) {
     .container {

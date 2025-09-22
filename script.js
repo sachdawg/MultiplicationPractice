@@ -6,6 +6,9 @@ const quizScreen = document.getElementById('quiz-screen');
 const resultsScreen = document.getElementById('results-screen');
 const maxNumberInput = document.getElementById('max-number');
 const startBtn = document.getElementById('start-btn');
+// new dec/inc buttons
+const decMaxBtn = document.getElementById('dec-max');
+const incMaxBtn = document.getElementById('inc-max');
 const timerElement = document.getElementById('timer');
 const timerProgress = document.querySelector('.timer-progress');
 const num1Element = document.getElementById('num1');
@@ -15,12 +18,13 @@ const feedbackElement = document.getElementById('feedback');
 const questionCountElement = document.getElementById('question-count');
 const scoreElement = document.getElementById('score');
 const highestScoreElement = document.getElementById('highest-score');
-const accuracyElement = document.getElementById('accuracy');
+// accuracyElement removed
 const restartBtn = document.getElementById('restart-btn');
 const scoreChartCanvas = document.getElementById('score-chart');
 
 // Game variables
 let maxNumber = 12;
+// timer default changed to 60
 let timeLeft = 60;
 let totalTime = 60;
 let timer;
@@ -30,13 +34,32 @@ let currentAnswer = 0;
 let questionHistory = [];
 let scoreHistory = JSON.parse(localStorage.getItem('multiplicationScoreHistory')) || [];
 let chart = null;
+// track last shown question to avoid immediate repeats
+let lastQuestion = null;
 
 // Initialize the app
 function init() {
     startBtn.addEventListener('click', startGame);
     restartBtn.addEventListener('click', resetGame);
+    // bind clear data button (may be null if DOM changed)
+    const clearDataBtn = document.getElementById('clear-data-btn');
+    if (clearDataBtn) {
+        clearDataBtn.addEventListener('click', handleClearData);
+    }
     answerInput.addEventListener('input', checkAnswer);
     
+    // wire up increment/decrement buttons
+    decMaxBtn.addEventListener('click', () => {
+        let v = parseInt(maxNumberInput.value) || 1;
+        v = Math.max(1, v - 1);
+        maxNumberInput.value = v;
+    });
+    incMaxBtn.addEventListener('click', () => {
+        let v = parseInt(maxNumberInput.value) || 1;
+        v = Math.min(20, v + 1);
+        maxNumberInput.value = v;
+    });
+
     // Prevent blur on mobile to keep keyboard active
     answerInput.addEventListener('blur', () => {
         setTimeout(() => answerInput.focus(), 0);
@@ -109,20 +132,58 @@ function updateTimer() {
     }
 }
 
-// Generate a multiplication question with weighted distribution
-function generateQuestion() {
-    // Create weighted array where higher numbers appear more frequently
-    let numbers = [];
-    for (let i = 1; i <= maxNumber; i++) {
-        // Add each number 'i' times to the array
-        for (let j = 0; j < i; j++) {
-            numbers.push(i);
+// New: chooseNumber implements the requested distribution
+function chooseNumber() {
+    const n = maxNumber;
+    if (n <= 0) return 1;
+    // numbers descending: largest first
+    const numbers = [];
+    for (let k = n; k >= 1; k--) numbers.push(k);
+    
+    // build geometric probabilities starting from 0.5
+    const probs = [];
+    let p = 0.5;
+    for (let i = 0; i < n; i++) {
+        probs.push(p);
+        p = p / 2;
+    }
+    // ensure sum to 1 by adding remainder to last
+    const sum = probs.reduce((a, b) => a + b, 0);
+    const remainder = 1 - sum;
+    probs[probs.length - 1] += remainder;
+    
+    // build cumulative and pick
+    const cumulative = [];
+    probs.reduce((acc, v, i) => {
+        cumulative[i] = acc + v;
+        return cumulative[i];
+    }, 0);
+    
+    const r = Math.random();
+    for (let i = 0; i < cumulative.length; i++) {
+        if (r <= cumulative[i]) {
+            return numbers[i];
         }
     }
-    
-    // Select two random numbers from the weighted array
-    const num1 = numbers[Math.floor(Math.random() * numbers.length)];
-    const num2 = numbers[Math.floor(Math.random() * numbers.length)];
+    // fallback
+    return numbers[numbers.length - 1];
+}
+
+// Generate a multiplication question with weighted distribution
+function generateQuestion() {
+    // Select two numbers using the new distribution
+    let num1 = chooseNumber();
+    let num2 = chooseNumber();
+    // avoid repeating the exact same displayed question twice in a row
+    let questionKey = `${num1}×${num2}`;
+    let attempts = 0;
+    while (lastQuestion !== null && questionKey === lastQuestion && attempts < 10) {
+        num1 = chooseNumber();
+        num2 = chooseNumber();
+        questionKey = `${num1}×${num2}`;
+        attempts++;
+    }
+    lastQuestion = questionKey;
     
     // Update display
     num1Element.textContent = num1;
@@ -186,8 +247,7 @@ function endGame() {
     // Display results
     scoreElement.textContent = score;
     highestScoreElement.textContent = highestScore;
-    const accuracy = totalQuestions > 0 ? Math.round((score / totalQuestions) * 100) : 0;
-    accuracyElement.textContent = accuracy;
+    // accuracy removed per request
     
     // Create line chart
     createScoreChart();
@@ -232,6 +292,26 @@ function createScoreChart() {
             }
         }
     });
+}
+
+// New: handle clear saved scores (confirmation + clear)
+function handleClearData() {
+    const ok = window.confirm('Are you sure you want to permanently delete all saved scores? This cannot be undone.');
+    if (!ok) return;
+    // Clear storage and in-memory data
+    localStorage.removeItem('multiplicationScoreHistory');
+    scoreHistory = [];
+    // Update UI
+    highestScoreElement.textContent = '0';
+    // refresh chart if visible
+    if (chart) {
+        chart.destroy();
+        chart = null;
+    }
+    // recreate (will show empty data)
+    createScoreChart();
+    // optionally provide quick feedback
+    alert('Saved scores cleared.');
 }
 
 // Reset the game

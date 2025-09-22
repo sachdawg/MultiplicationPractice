@@ -11,8 +11,14 @@
     <div class="container">
         <div id="start-screen" class="screen">
             <h1>Multiplication Practice</h1>
-            <p>Enter the maximum number for your multiplication practice:</p>
-            <input type="number" id="max-number" min="1" max="20" value="12" inputmode="decimal">
+            <p>Choose the maximum number for your multiplication practice:</p>
+
+            <div class="num-picker">
+                <button id="dec-max" class="num-btn" type="button">−</button>
+                <input type="number" id="max-number" min="1" max="20" value="12" readonly>
+                <button id="inc-max" class="num-btn" type="button">+</button>
+            </div>
+
             <button id="start-btn">Start Practice</button>
         </div>
         
@@ -22,7 +28,7 @@
                     <circle class="timer-bg" cx="50" cy="50" r="45"></circle>
                     <circle class="timer-progress" cx="50" cy="50" r="45"></circle>
                 </svg>
-                <div class="timer-text"><span id="timer">60</span>s</div>
+                <div class="timer-text"><span id="timer">30</span>s</div>
             </div>
             <div class="question">
                 <span id="num1">0</span> × <span id="num2">0</span> = ?
@@ -39,11 +45,13 @@
             <div class="results">
                 <p>Current Score: <span id="score">0</span> correct answers</p>
                 <p>Highest Score: <span id="highest-score">0</span></p>
-                <p>Accuracy: <span id="accuracy">0</span>%</p>
                 <div class="chart-container">
                     <canvas id="score-chart"></canvas>
                 </div>
-                <button id="restart-btn">Practice Again</button>
+                <div style="display:flex;gap:10px;flex-direction:column;">
+                    <button id="restart-btn">Practice Again</button>
+                    <button id="clear-data-btn" class="clear-btn">Clear Saved Scores</button>
+                </div>
             </div>
         </div>
     </div>
